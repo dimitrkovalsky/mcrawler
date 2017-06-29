@@ -4,22 +4,31 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liberty.common.RequestHelper;
 import com.liberty.model.ZaycevArtist;
 import com.liberty.model.ZaycevTrack;
+import com.liberty.repository.ZaycevArtistRepository;
 import lombok.Data;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 
 /**
  * Created by dkovalskyi on 27.06.2017.
  */
+@Component
 public class ZaycevCrawler {
     private String ARTIST_SONGS_URL = "http://zaycev.net/artist/%s?page=%s";
     private String STREAM_LINK_URL = "http://zaycev.net%s";
     private String ARTIST_LETTER_LINK_URL = "http://zaycev.net/artist/letter-%s-more.html?page=%s&_=%s";
+    private String ARTIST_RUS_LETTER_LINK_URL = "http://zaycev.net/artist/letter-rus-%s-more.html?page=%s&_=%s";
     private String ENGLISH_LETTERS = "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z";
+    private String RUSSIAN_LETTERS = "a b v g d e zh z i k l m n o p r s t u f h c ch sh sch ee yu ya";
+
+    @Autowired
+    private ZaycevArtistRepository artistRepository;
 
     private Map<Long, ZaycevTrack> crawlArtistSongs(long artistId, String artistName) {
         Map<Long, ZaycevTrack> allLinks = new HashMap<>();
@@ -100,15 +109,29 @@ public class ZaycevCrawler {
         return zaycevTracks;
     }
 
-    public List<ZaycevArtist> crawlEnglishArtists() {
+    public void crawlArtists() {
+        crawlEnglishArtists();
+        crawlRussianArtists();
+    }
+
+    private List<ZaycevArtist> crawlRussianArtists() {
+        String[] letters = RUSSIAN_LETTERS.toLowerCase().split(" ");
+        return crawlArtists(letters, true);
+    }
+
+    private List<ZaycevArtist> crawlEnglishArtists() {
         String[] letters = ENGLISH_LETTERS.toLowerCase().split(" ");
+        return crawlArtists(letters, false);
+    }
+
+    private List<ZaycevArtist> crawlArtists(String[] letters, boolean russian) {
         List<ZaycevArtist> allArtists = new ArrayList<>();
         for (String letter : letters) {
             int page = 1;
             boolean completed = false;
             Map<Long, ZaycevArtist> allLinks = new HashMap<>();
             while (!completed) {
-                Map<Long, ZaycevArtist> retrieved = toArtistMap(crawlArtist(letter, page));
+                Map<Long, ZaycevArtist> retrieved = toArtistMap(crawlArtist(letter, page, russian));
 
                 if (retrieved.size() < 50 || !areNewElements(retrieved, allLinks)) {
                     completed = true;
@@ -116,18 +139,27 @@ public class ZaycevCrawler {
                 allLinks.putAll(retrieved);
                 page++;
             }
-            allArtists.addAll(allLinks.values());
+            Collection<ZaycevArtist> values = allLinks.values();
+            artistRepository.save(values);
+            System.out.println(String.format("Crawled %s artists for letter %s", values.size(), letter));
+            allArtists.addAll(values);
+            System.out.println(String.format("Crawled %s %s artists", allArtists.size(), russian ? "russian" : "english"));
         }
 
         return allArtists;
     }
 
-    private List<ZaycevArtist> crawlArtist(String letter, int page) {
+    private List<ZaycevArtist> crawlArtist(String letter, int page, boolean rus) {
         List<ZaycevArtist> artists = new ArrayList<>();
         System.out.println(String.format("Trying crawl artists for %s letter and page : %s", letter, page));
         Random random = new Random();
         try {
-            String url = String.format(ARTIST_LETTER_LINK_URL, letter, page, random.nextInt());
+            String url;
+            if (rus) {
+                url = String.format(ARTIST_RUS_LETTER_LINK_URL, letter, page, random.nextInt());
+            } else {
+                url = String.format(ARTIST_LETTER_LINK_URL, letter, page, random.nextInt());
+            }
             String result = RequestHelper.executeRequestAndGetResult(url);
             System.out.println(result);
             Document document = Jsoup.parse(result);

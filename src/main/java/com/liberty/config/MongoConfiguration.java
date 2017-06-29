@@ -1,4 +1,4 @@
-package com.liberty.accord.config;
+package com.liberty.config;
 
 import com.mongodb.Mongo;
 import com.mongodb.MongoClient;

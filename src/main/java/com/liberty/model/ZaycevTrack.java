@@ -2,7 +2,10 @@ package com.liberty.model;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.ReadOnlyProperty;
+import org.springframework.data.mongodb.core.index.TextIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.TextScore;
 
 /**
  * User: Dimitr
@@ -16,10 +19,16 @@ public class ZaycevTrack {
     private Long zaycevId;
     private String dataUrl;
     private String streamLink;
+    @TextIndexed
     private String artistName;
     private String artistId;
+    @TextIndexed
     private String trackName;
     private Integer duration;
     private Long zaycevArtistId;
+    @TextIndexed
     private String zaycevArtistName;
+    @TextScore
+    @ReadOnlyProperty
+    Float score;
 }
