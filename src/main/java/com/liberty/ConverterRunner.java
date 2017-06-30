@@ -14,6 +14,7 @@ public class ConverterRunner {
     public static void main(String[] args) {
         ConfigurableApplicationContext context = new SpringApplicationBuilder(ConverterRunner.class).web(false).run(args);
         DataConverter converter = context.getBean(DataConverter.class);
-        converter.runConverter();
+        converter.runArtistConverter();
+       // converter.runAlbumConverter();
     }
 }

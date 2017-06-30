@@ -19,10 +19,10 @@ import java.util.stream.Collectors;
 /**
  * Created by dkovalskyi on 29.06.2017.
  */
-@Table(name = "artist")
-@Entity(name = "artist")
+@Table(name = "release")
+@Entity(name = "release")
 @Data
-public class ArtistEntity {
+public class ReleaseEntity {
     @Id
     @Column(name = "id")
     private Integer id;
@@ -31,19 +31,10 @@ public class ArtistEntity {
     private UUID mbid;
     @Column(name = "name")
     private String name;
+    @Column(name = "artist_credit")
+    private Integer artistId;
 
     @OneToMany(targetEntity = TagEntity.class, fetch = FetchType.EAGER)
-    @JoinTable(name = "artist_tag", joinColumns = @JoinColumn(name = "artist", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tag", referencedColumnName = "id"))
+    @JoinTable(name = "release_tag", joinColumns = @JoinColumn(name = "release", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tag", referencedColumnName = "id"))
     private List<TagEntity> tags;
-
-    public MbArtist toMongoEntity() {
-        MbArtist mbArtist = new MbArtist();
-        mbArtist.setMbid(mbid.toString());
-        mbArtist.setInternalId(id);
-        mbArtist.setName(name);
-        if (tags != null) {
-            mbArtist.setTags(tags.stream().map(TagEntity::getName).collect(Collectors.toList()));
-        }
-        return mbArtist;
-    }
 }
