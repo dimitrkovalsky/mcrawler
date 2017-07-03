@@ -72,6 +72,13 @@ public class DataConverter {
         }
     }
 
+    public void convertArtistWithAlbums(Integer internalId) {
+        ArtistEntity one = artistRepository.findOne(internalId);
+        MbArtist mbArtist = one.toMongoEntity();
+        mbArtistRepository.save(mbArtist);
+        runAlbumConverter(internalId);
+    }
+
     private void runAlbumConverter(int artistId) {
         ArtistEntity artistEntity = artistRepository.findOne(artistId);
         List<ReleaseEntity> releases = releaseRepository.findAllByArtistId(artistId);

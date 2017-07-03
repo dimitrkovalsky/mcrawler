@@ -88,7 +88,7 @@ public class ZaycevCrawler {
             TrackUrl trackUrl = mapper.readValue(result, TrackUrl.class);
             url = trackUrl.url;
         } catch (Exception e) {
-            System.err.println("Can not find stream for : " + link.getTrackName());
+            System.err.println("Can not findByArtistName stream for : " + link.getTrackName());
         }
         return url;
     }
@@ -137,7 +137,7 @@ public class ZaycevCrawler {
     }
 
     public void crawlArtists() {
-        crawlEnglishArtists();
+    //    crawlEnglishArtists();
         crawlRussianArtists();
     }
 

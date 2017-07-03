@@ -13,7 +13,7 @@ import org.springframework.data.mongodb.core.mapping.TextScore;
  * Time: 8:39
  */
 @Data
-@Document( collection = "zaycev_track")
+@Document(collection = "zaycev_track")
 public class ZaycevTrack {
     @Id
     private Long zaycevId;
@@ -30,5 +30,14 @@ public class ZaycevTrack {
     private String zaycevArtistName;
     @TextScore
     @ReadOnlyProperty
-    Float score;
+    private Float score;
+
+    public StreamTrack toStreamTrack() {
+        StreamTrack track = new StreamTrack();
+        track.setPlatform(StreamPlatform.ZAYCEV);
+        track.setTrackName(trackName);
+        track.setPlatformTrackId(zaycevId.toString());
+        track.setStreamLink(streamLink);
+        return track;
+    }
 }
