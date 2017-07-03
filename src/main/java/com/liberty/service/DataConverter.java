@@ -1,10 +1,6 @@
 package com.liberty.service;
 
-import com.liberty.entity.ArtistEntity;
-import com.liberty.entity.MediumEntity;
-import com.liberty.entity.ReleaseEntity;
-import com.liberty.entity.TagEntity;
-import com.liberty.entity.TrackEntity;
+import com.liberty.entity.*;
 import com.liberty.jpa.ArtistRepository;
 import com.liberty.jpa.MediumRepository;
 import com.liberty.jpa.ReleaseRepository;
@@ -15,7 +11,6 @@ import com.liberty.repository.MbAlbumRepository;
 import com.liberty.repository.MbArtistRepository;
 import com.liberty.repository.MbTrackRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
@@ -40,13 +35,7 @@ public class DataConverter {
     private MbTrackRepository mbTrackRepository;
     @Autowired
     private MbAlbumRepository mbAlbumRepository;
-
-    public void runConverter() {
-        Page<ArtistEntity> all = artistRepository.findAll(new PageRequest(0, 20));
-        mbArtistRepository.save(all.getContent().stream().map(ArtistEntity::toMongoEntity).collect(Collectors.toList()));
-        System.out.println(all);
-    }
-
+    
     public void runArtistConverter() {
         int page = 0;
         int size = 10000;
@@ -64,17 +53,16 @@ public class DataConverter {
             }
         }
     }
-
     public void runAlbumConverter() {
-        int page = 0;
-        int size = 100;
+        int page = 386;
+        int size = 1000;
         boolean completed = false;
-        AtomicInteger counter = new AtomicInteger(0);
-        long total = artistRepository.count();
+        AtomicInteger counter = new AtomicInteger(page * size);
+        long total = mbArtistRepository.count();
         while (!completed) {
-            List<ArtistEntity> all = artistRepository.findAll(new PageRequest(page, size)).getContent();
+            List<MbArtist> all = mbArtistRepository.findAll(new PageRequest(page, size)).getContent();
             all.parallelStream().forEach(a -> {
-                runAlbumConverter(a.getId());
+                runAlbumConverter(a.getInternalId());
                 System.out.println(String.format("Processed %s / %s artists", counter.incrementAndGet(), total));
             });
             page++;

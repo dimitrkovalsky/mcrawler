@@ -5,15 +5,18 @@ import com.liberty.common.RequestHelper;
 import com.liberty.model.ZaycevArtist;
 import com.liberty.model.ZaycevTrack;
 import com.liberty.repository.ZaycevArtistRepository;
+import com.liberty.repository.ZaycevTrackRepository;
 import lombok.Data;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by dkovalskyi on 27.06.2017.
@@ -29,6 +32,30 @@ public class ZaycevCrawler {
 
     @Autowired
     private ZaycevArtistRepository artistRepository;
+
+    @Autowired
+    private ZaycevTrackRepository zaycevTrackRepository;
+
+    public void crawlArtistSongs() {
+        int page = 0;
+        int size = 100;
+        boolean completed = false;
+        AtomicInteger counter = new AtomicInteger(0);
+        long total = artistRepository.count();
+        while (!completed) {
+            List<ZaycevArtist> all = artistRepository.findAll(new PageRequest(page, size)).getContent();
+
+            all.parallelStream().forEach(x -> {
+                crawlArtistSongs(x.getZaycevArtistId(), x.getZaycevArtistName());
+                System.out.println(String.format("Processed %s / %s artists", counter.incrementAndGet(), total));
+            });
+
+            page++;
+            if (all.size() < size) {
+                completed = true;
+            }
+        }
+    }
 
     private Map<Long, ZaycevTrack> crawlArtistSongs(long artistId, String artistName) {
         Map<Long, ZaycevTrack> allLinks = new HashMap<>();
@@ -49,6 +76,7 @@ public class ZaycevCrawler {
             l.setStreamLink(streamLink);
         });
         System.out.println(String.format("Fetched %s stream links for %s", allLinks.size(), artistName));
+        zaycevTrackRepository.save(allLinks.values());
         return allLinks;
     }
 
@@ -59,7 +87,6 @@ public class ZaycevCrawler {
             ObjectMapper mapper = new ObjectMapper();
             TrackUrl trackUrl = mapper.readValue(result, TrackUrl.class);
             url = trackUrl.url;
-            System.out.println(url);
         } catch (Exception e) {
             System.err.println("Can not find stream for : " + link.getTrackName());
         }

@@ -13,6 +13,7 @@ public class Runner {
     public static void main(String[] args) {
         ConfigurableApplicationContext context = new SpringApplicationBuilder(Runner.class).web(false).run(args);
         ZaycevCrawler crawlerService = context.getBean(ZaycevCrawler.class);
-        crawlerService.crawlArtists();
+//        crawlerService.crawlArtists();
+        crawlerService.crawlArtistSongs();
     }
 }
