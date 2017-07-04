@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
  * @since 18.05.2017
  */
 @Configuration
-class MongoConfiguration extends AbstractMongoConfiguration {
+public class MongoConfiguration extends AbstractMongoConfiguration {
 
     private static final String DB_NAME = "accord-db";
     private static final String HOST = "127.0.0.1";

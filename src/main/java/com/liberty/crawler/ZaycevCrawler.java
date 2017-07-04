@@ -194,7 +194,6 @@ public class ZaycevCrawler {
                 String href = e.attr("href");
                 Long artistId = Long.valueOf(href.substring(href.indexOf("/artist/") + 8));
                 String name = e.child(0).attr("alt");
-                System.out.println(e);
                 artists.add(new ZaycevArtist(artistId, name));
             });
 

@@ -3,6 +3,7 @@ package com.liberty.repository;
 import com.liberty.model.PleerTrack;
 import com.mongodb.DBObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.BasicQuery;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -28,13 +29,9 @@ public class PleerTrackRepositoryImpl implements PleerTrackRepository {
     public PleerTrackRepositoryImpl(MongoOperations operations) {
         this.operations = operations;
     }
-//    @Query(value = "{'song':{$regex : ?0, &options: 'i'}}") // Todo: change to $text $search
-//    List<PleerTrack> findByName(String name);
 
-    //    @Query(value = "{'singer' : //?0//i}")
-//    List<PleerTrack> findByArtistName(String name);
-//
     @Override
+    @Cacheable(value = "pleerTracks", key = "artistName")
     public List<PleerTrack> findByArtistName(String artistName) {
         DBObject dbObject = Criteria.where("singer").regex(Pattern.compile(artistName, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)).getCriteriaObject();
 

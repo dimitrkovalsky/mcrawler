@@ -13,14 +13,17 @@ import com.liberty.repository.GenericTrackRepository;
 import com.liberty.repository.MbAlbumRepository;
 import com.liberty.repository.MbArtistRepository;
 import com.liberty.repository.MbTrackRepository;
+import com.liberty.repository.PleerArtistRepository;
 import com.liberty.repository.PleerTrackRepository;
 import com.liberty.repository.ZaycevTrackRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
@@ -31,23 +34,17 @@ import static java.util.Collections.emptyList;
 @Component
 public class TrackLinker {
     @Autowired
-    private ArtistRepository artistRepository;
-    @Autowired
-    private ReleaseRepository releaseRepository;
-    @Autowired
-    private MediumRepository mediumRepository;
-    @Autowired
     private MbArtistRepository mbArtistRepository;
     @Autowired
     private MbTrackRepository mbTrackRepository;
-    @Autowired
-    private MbAlbumRepository mbAlbumRepository;
     @Autowired
     private GenericTrackRepository genericTrackRepository;
     @Autowired
     private ZaycevTrackRepository zaycevTrackRepository;
     @Autowired
     private PleerTrackRepository pleerTrackRepository;
+    @Autowired
+    private PleerArtistRepository pleerArtistRepository;
 
     private String cleanString(String toClean) {
         if (StringUtils.isEmpty(toClean)) {
@@ -62,7 +59,6 @@ public class TrackLinker {
             System.err.println("Not found pleer tracks for : " + artist.getName());
             return emptyList();
         }
-        //todo: save artist
         System.out.println(String.format("Found %s track for %s artist in Pleer database", tracks.size(), artist.getName()));
 
         return tracks.stream().filter(t -> {
@@ -77,7 +73,6 @@ public class TrackLinker {
             System.err.println("Not found zaycev tracks for : " + artist.getName());
             return emptyList();
         }
-        //todo: save artist
         System.out.println(String.format("Found %s track for %s artist in Zaycev database", tracks.size(), artist.getName()));
 
         return tracks.stream().filter(t -> {
@@ -87,7 +82,26 @@ public class TrackLinker {
     }
 
     public void linkTracks() {
-        MbTrack track = mbTrackRepository.findOne("e5930ce1-873b-39b4-bfa4-018cce254c80");
+        int page = 0;
+        int size = 1000;
+        boolean completed = false;
+        AtomicInteger counter = new AtomicInteger(page * size);
+        long total = mbTrackRepository.count();
+        while (!completed) {
+            List<MbTrack> all = mbTrackRepository.findAll(new PageRequest(page, size)).getContent();
+            all.parallelStream().forEach(t -> {
+                linkTracks(t.getMbid());
+                System.out.println(String.format("Processed %s / %s tracks", counter.incrementAndGet(), total));
+            });
+            page++;
+            if (all.size() < size) {
+                completed = true;
+            }
+        }
+    }
+
+    private void linkTracks(String trackMbid) {
+        MbTrack track = mbTrackRepository.findOne(trackMbid);
         MbArtist artist = mbArtistRepository.findOne(track.getArtistMbib());
 
         List<StreamTrack> pleerStreams = getPleerStreams(track, artist);
@@ -96,7 +110,7 @@ public class TrackLinker {
 
         genericTrack.addStreams(pleerStreams);
         genericTrack.addStreams(zaycevStreams);
-
+        System.out.println(String.format("Found %s streams for track: %s and artist: %s", genericTrack.getStreams().size(), track.getName(), artist.getName()));
         genericTrackRepository.save(genericTrack);
     }
 
