@@ -31,7 +31,7 @@ public class PleerTrackRepositoryImpl implements PleerTrackRepository {
     }
 
     @Override
-    @Cacheable(value = "pleerTracks", key = "artistName")
+    @Cacheable(value = "pleerTracks", key = "#artistName")
     public List<PleerTrack> findByArtistName(String artistName) {
         DBObject dbObject = Criteria.where("singer").regex(Pattern.compile(artistName, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)).getCriteriaObject();
 

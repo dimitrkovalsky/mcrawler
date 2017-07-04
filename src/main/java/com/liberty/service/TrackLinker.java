@@ -73,7 +73,7 @@ public class TrackLinker {
             System.err.println("Not found zaycev tracks for : " + artist.getName());
             return emptyList();
         }
-        System.out.println(String.format("Found %s track for %s artist in Zaycev database", tracks.size(), artist.getName()));
+
 
         return tracks.stream().filter(t -> {
             String cleanName = cleanString(t.getTrackName());

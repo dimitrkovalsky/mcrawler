@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.BasicQuery;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -14,6 +15,7 @@ import java.util.regex.Pattern;
 /**
  * Created by dkovalskyi on 04.07.2017.
  */
+@Repository
 public class PleerArtistRepositoryImpl implements PleerArtistRepository {
     private final MongoOperations operations;
 
