@@ -1,5 +1,6 @@
 package com.liberty.service;
 
+import com.liberty.common.PleerLinkFetcher;
 import com.liberty.jpa.ArtistRepository;
 import com.liberty.jpa.MediumRepository;
 import com.liberty.jpa.ReleaseRepository;
@@ -7,6 +8,7 @@ import com.liberty.model.GenericTrack;
 import com.liberty.model.MbArtist;
 import com.liberty.model.MbTrack;
 import com.liberty.model.PleerTrack;
+import com.liberty.model.StreamPlatform;
 import com.liberty.model.StreamTrack;
 import com.liberty.model.ZaycevTrack;
 import com.liberty.repository.GenericTrackRepository;
@@ -23,6 +25,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -74,7 +77,6 @@ public class TrackLinker {
             return emptyList();
         }
 
-
         return tracks.stream().filter(t -> {
             String cleanName = cleanString(t.getTrackName());
             return cleanName.contains(cleanString(track.getName()));
@@ -91,6 +93,41 @@ public class TrackLinker {
             List<MbTrack> all = mbTrackRepository.findAll(new PageRequest(page, size)).getContent();
             all.parallelStream().forEach(t -> {
                 linkTracks(t.getMbid());
+                System.out.println(String.format("Processed %s / %s tracks", counter.incrementAndGet(), total));
+            });
+            page++;
+            if (all.size() < size) {
+                completed = true;
+            }
+        }
+    }
+
+    public void fetchPleerStreams() {
+        PleerLinkFetcher fetcher = new PleerLinkFetcher();
+        int page = 0;
+        int size = 1000;
+        boolean completed = false;
+        AtomicInteger counter = new AtomicInteger(page * size);
+        long total = genericTrackRepository.count();
+        while (!completed) {
+            List<GenericTrack> all = genericTrackRepository.findAll(new PageRequest(page, size)).getContent();
+            all.forEach(t -> {
+                if (t.getStreams() != null) {
+                    t.getStreams().stream().filter(s -> s.getPlatform() == StreamPlatform.PLEER && StringUtils.isEmpty(s.getStreamLink()))
+                        .forEach(s -> {
+                            try {
+                                Optional<String> link = fetcher.fetchLink(s.getPlatformTrackId());
+                                link.ifPresent(l -> {
+                                    s.setStreamLink(l);
+                                    System.out.println("Fetched stream for : " + s.getTrackName());
+                                });
+                                Thread.sleep(1000);
+                            } catch (Exception e) {
+                                System.err.println(e.getMessage());
+                            }
+                        });
+                    genericTrackRepository.save(t);
+                }
                 System.out.println(String.format("Processed %s / %s tracks", counter.incrementAndGet(), total));
             });
             page++;

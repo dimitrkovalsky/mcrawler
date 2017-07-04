@@ -19,6 +19,7 @@ public class LinkerRunner {
     public static void main(String[] args) {
         ConfigurableApplicationContext context = new SpringApplicationBuilder(LinkerRunner.class).web(false).run(args);
         TrackLinker linker = context.getBean(TrackLinker.class);
-        linker.linkTracks();
+//        linker.linkTracks();
+        linker.fetchPleerStreams();
     }
 }

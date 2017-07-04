@@ -38,7 +38,7 @@ public class PleerTrack {
     public StreamTrack toStreamTrack() {
         StreamTrack track = new StreamTrack();
         track.setPlatform(StreamPlatform.PLEER);
-        track.setPlatformTrackId(fileId);
+        track.setPlatformTrackId(id);
         track.setTrackName(song);
         track.setStreamLink(null);
         return track;
