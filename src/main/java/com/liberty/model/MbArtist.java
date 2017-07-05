@@ -27,5 +27,6 @@ public class MbArtist {
     private Integer internalId;
     @TextIndexed
     private String name;
+    private ArtistData data;
     private List<String> tags;
 }

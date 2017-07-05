@@ -16,5 +16,6 @@ public class ConverterRunner {
         //converter.runArtistConverter();
 //        converter.runAlbumConverter();
         converter.convertArtistWithAlbums(163952);
+//        converter.runArtistDataConverter();
     }
 }

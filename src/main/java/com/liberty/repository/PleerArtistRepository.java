@@ -9,4 +9,10 @@ import java.util.List;
  */
 public interface PleerArtistRepository {
     List<PleerArtist> findByName(String name);
+
+    PleerArtist findOne(String id);
+
+    List<PleerArtist> findAll();
+
+    List<PleerArtist> findAll(List<String> ids);
 }

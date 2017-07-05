@@ -7,9 +7,11 @@ import com.liberty.jpa.ReleaseRepository;
 import com.liberty.model.MbAlbum;
 import com.liberty.model.MbArtist;
 import com.liberty.model.MbTrack;
+import com.liberty.model.PleerArtist;
 import com.liberty.repository.MbAlbumRepository;
 import com.liberty.repository.MbArtistRepository;
 import com.liberty.repository.MbTrackRepository;
+import com.liberty.repository.PleerArtistRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
@@ -35,7 +37,9 @@ public class DataConverter {
     private MbTrackRepository mbTrackRepository;
     @Autowired
     private MbAlbumRepository mbAlbumRepository;
-    
+    @Autowired
+    private PleerArtistRepository pleerArtistRepository;
+
     public void runArtistConverter() {
         int page = 0;
         int size = 10000;
@@ -53,6 +57,21 @@ public class DataConverter {
             }
         }
     }
+
+    public void runArtistDataConverter() {
+        int page = 0;
+        int size = 10000;
+        boolean completed = false;
+        AtomicInteger counter = new AtomicInteger(0);
+        List<PleerArtist> pleerArtists = pleerArtistRepository.findAll();
+        pleerArtists.parallelStream().forEach(a -> {
+            MbArtist mbArtist = mbArtistRepository.findOne(a.getId().toString());
+            mbArtist.setData(a.getArtistData());
+            mbArtistRepository.save(mbArtist);
+            System.out.println(String.format("Processed %s / %s artists", counter.incrementAndGet(), pleerArtists.size()));
+        });
+    }
+
     public void runAlbumConverter() {
         int page = 386;
         int size = 1000;
