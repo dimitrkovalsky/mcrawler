@@ -138,8 +138,8 @@ public class TrackLinker {
 
     public void linkTracksNew() {
         Map<String, String> mbArtists = loadMbArtists();
-        Map<String, List<StreamTrack>> pleerArtists = loadPleerArtists();
         Map<String, List<StreamTrack>> zaycevArtists = loadZaycevArtists();
+        Map<String, List<StreamTrack>> pleerArtists = loadPleerArtists();
         int page = 0;
         int size = 1000;
         boolean completed = false;
@@ -208,7 +208,7 @@ public class TrackLinker {
         while (!completed) {
             List<ZaycevTrack> all = zaycevTrackRepository.findAll(new PageRequest(page, size));
             all.forEach(track -> {
-                String artist = cleanString(track.getArtistName());
+                String artist = cleanString(track.getZaycevArtistName());
                 List<StreamTrack> streamTracks = zaycevTrackMap.get(artist);
                 if (streamTracks == null) {
                     ArrayList<StreamTrack> streams = new ArrayList<>();
