@@ -4,13 +4,11 @@ import com.liberty.model.PleerTrack;
 import com.mongodb.DBObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.BasicQuery;
 import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.TextCriteria;
-import org.springframework.data.mongodb.core.query.TextQuery;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -39,4 +37,19 @@ public class PleerTrackRepositoryImpl implements PleerTrackRepository {
         return operations.find(query, PleerTrack.class);
     }
 
+    @Override
+    public List<PleerTrack> findAll() {
+        return operations.findAll(PleerTrack.class);
+    }
+
+    @Override
+    public List<PleerTrack> findAll(PageRequest pageRequest) {
+        Query query = new Query().with(pageRequest);
+        return operations.find(query, PleerTrack.class, "song");
+    }
+
+    @Override
+    public long count() {
+        return operations.getCollection("song").count();
+    }
 }

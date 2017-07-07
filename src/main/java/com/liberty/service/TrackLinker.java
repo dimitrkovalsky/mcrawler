@@ -1,9 +1,6 @@
 package com.liberty.service;
 
 import com.liberty.common.PleerLinkFetcher;
-import com.liberty.jpa.ArtistRepository;
-import com.liberty.jpa.MediumRepository;
-import com.liberty.jpa.ReleaseRepository;
 import com.liberty.model.GenericTrack;
 import com.liberty.model.MbArtist;
 import com.liberty.model.MbTrack;
@@ -12,7 +9,6 @@ import com.liberty.model.StreamPlatform;
 import com.liberty.model.StreamTrack;
 import com.liberty.model.ZaycevTrack;
 import com.liberty.repository.GenericTrackRepository;
-import com.liberty.repository.MbAlbumRepository;
 import com.liberty.repository.MbArtistRepository;
 import com.liberty.repository.MbTrackRepository;
 import com.liberty.repository.PleerArtistRepository;
@@ -21,10 +17,13 @@ import com.liberty.repository.ZaycevTrackRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -135,6 +134,131 @@ public class TrackLinker {
                 completed = true;
             }
         }
+    }
+
+    public void linkTracksNew() {
+        Map<String, String> mbArtists = loadMbArtists();
+        Map<String, List<StreamTrack>> pleerArtists = loadPleerArtists();
+        Map<String, List<StreamTrack>> zaycevArtists = loadZaycevArtists();
+        int page = 0;
+        int size = 1000;
+        boolean completed = false;
+        AtomicInteger counter = new AtomicInteger(page * size);
+        long total = mbTrackRepository.count();
+        while (!completed) {
+            List<MbTrack> all = mbTrackRepository.findAll(new PageRequest(page, size)).getContent();
+            all.parallelStream().forEach(t -> {
+                String artistName = mbArtists.get(t.getArtistMbib());
+                List<StreamTrack> pleerStreams = null;
+                List<StreamTrack> zaycevStreams = null;
+                if (!StringUtils.isEmpty(artistName)) {
+                    pleerStreams = pleerArtists.get(artistName);
+                    zaycevStreams = zaycevArtists.get(artistName);
+                }
+                linkTracks(t, artistName, pleerStreams, zaycevStreams);
+                System.out.println(String.format("Processed %s / %s tracks", counter.incrementAndGet(), total));
+            });
+            page++;
+            if (all.size() < size) {
+                completed = true;
+            }
+        }
+    }
+
+    private void linkTracks(MbTrack mbTrack, String artistName, List<StreamTrack> pleerStreams, List<StreamTrack> zaycevStreams) {
+        GenericTrack genericTrack = new GenericTrack(mbTrack);
+        genericTrack.addStreams(pleerStreams);
+        genericTrack.addStreams(zaycevStreams);
+
+        System.out.println(String.format("Found %s streams for track: %s and artist: %s", genericTrack.getStreams().size(), mbTrack.getName(), artistName));
+        genericTrackRepository.save(genericTrack);
+    }
+
+    public Map<String, String> loadMbArtists() {
+        Map<String, String> mbArtist = new HashMap<>();
+
+        int page = 0;
+        int size = 50000;
+        boolean completed = false;
+        AtomicInteger counter = new AtomicInteger(page * size);
+        long total = mbArtistRepository.count();
+        while (!completed) {
+            List<MbArtist> all = mbArtistRepository.findAll(new PageRequest(page, size)).getContent();
+            all.forEach(a -> {
+                String name = cleanString(a.getName());
+                mbArtist.put(a.getMbid(), name);
+            });
+            System.out.println(String.format("Loaded %s / %s musicbrainz artists", counter.addAndGet(all.size()), total));
+            page++;
+            if (all.size() < size) {
+                completed = true;
+            }
+        }
+        return mbArtist;
+    }
+
+    public Map<String, List<StreamTrack>> loadZaycevArtists() {
+        Map<String, List<StreamTrack>> zaycevTrackMap = new HashMap<>();
+
+        int page = 0;
+        int size = 20000;
+        boolean completed = false;
+        AtomicInteger counter = new AtomicInteger(page * size);
+        long total = zaycevTrackRepository.count();
+        while (!completed) {
+            List<ZaycevTrack> all = zaycevTrackRepository.findAll(new PageRequest(page, size));
+            all.forEach(track -> {
+                String artist = cleanString(track.getArtistName());
+                List<StreamTrack> streamTracks = zaycevTrackMap.get(artist);
+                if (streamTracks == null) {
+                    ArrayList<StreamTrack> streams = new ArrayList<>();
+                    streams.add(track.toStreamTrack());
+                    zaycevTrackMap.put(artist, streams);
+                } else {
+                    streamTracks.add(track.toStreamTrack());
+                    zaycevTrackMap.put(artist, streamTracks);
+                }
+            });
+            System.out.println(String.format("Loaded %s / %s tracks", counter.addAndGet(all.size()), total));
+            System.out.println(zaycevTrackMap.size() + " different artist for zaycev database");
+            page++;
+            if (all.size() < size) {
+                completed = true;
+            }
+        }
+        return zaycevTrackMap;
+    }
+
+    public Map<String, List<StreamTrack>> loadPleerArtists() {
+        Map<String, List<StreamTrack>> pleerTrackMap = new HashMap<>();
+
+        int page = 0;
+        int size = 20000;
+        boolean completed = false;
+        AtomicInteger counter = new AtomicInteger(page * size);
+        long total = pleerTrackRepository.count();
+        while (!completed) {
+            List<PleerTrack> all = pleerTrackRepository.findAll(new PageRequest(page, size));
+            all.forEach(track -> {
+                String singer = cleanString(track.getSinger());
+                List<StreamTrack> streamTracks = pleerTrackMap.get(singer);
+                if (streamTracks == null) {
+                    ArrayList<StreamTrack> streams = new ArrayList<>();
+                    streams.add(track.toStreamTrack());
+                    pleerTrackMap.put(singer, streams);
+                } else {
+                    streamTracks.add(track.toStreamTrack());
+                    pleerTrackMap.put(singer, streamTracks);
+                }
+            });
+            System.out.println(String.format("Loaded %s / %s tracks", counter.addAndGet(all.size()), total));
+            System.out.println(pleerTrackMap.size() + " different artists in pleer database");
+            page++;
+            if (all.size() < size) {
+                completed = true;
+            }
+        }
+        return pleerTrackMap;
     }
 
     private void linkTracks(String trackMbid) {

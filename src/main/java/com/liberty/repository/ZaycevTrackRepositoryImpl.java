@@ -5,9 +5,11 @@ import com.liberty.model.ZaycevTrack;
 import com.mongodb.DBObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.BasicQuery;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
@@ -39,5 +41,21 @@ public class ZaycevTrackRepositoryImpl implements ZaycevTrackRepository {
 
         BasicQuery query = new BasicQuery(dbObject);
         return operations.find(query, ZaycevTrack.class);
+    }
+
+    @Override
+    public List<ZaycevTrack> findAll() {
+        return operations.findAll(ZaycevTrack.class);
+    }
+
+    @Override
+    public List<ZaycevTrack> findAll(PageRequest pageRequest) {
+        Query query = new Query().with(pageRequest);
+        return operations.find(query, ZaycevTrack.class, "zaycev_track");
+    }
+
+    @Override
+    public long count() {
+        return operations.getCollection("zaycev_track").count();
     }
 }

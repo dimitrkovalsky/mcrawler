@@ -1,6 +1,7 @@
 package com.liberty.repository;
 
 import com.liberty.model.ZaycevTrack;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Collection;
@@ -13,4 +14,10 @@ public interface ZaycevTrackRepository {
     void save(Collection<ZaycevTrack> values);
 
     List<ZaycevTrack> findByArtistName(String artistName);
+
+    List<ZaycevTrack> findAll();
+
+    List<ZaycevTrack> findAll(PageRequest pageRequest);
+
+    long count();
 }
