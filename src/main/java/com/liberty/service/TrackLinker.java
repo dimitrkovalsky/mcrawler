@@ -141,7 +141,7 @@ public class TrackLinker {
         Map<String, List<StreamTrack>> zaycevArtists = loadZaycevArtists();
         Map<String, List<StreamTrack>> pleerArtists = loadPleerArtists();
         int page = 0;
-        int size = 1000;
+        int size = 10000;
         boolean completed = false;
         AtomicInteger counter = new AtomicInteger(page * size);
         long total = mbTrackRepository.count();
