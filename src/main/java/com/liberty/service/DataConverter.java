@@ -59,15 +59,15 @@ public class DataConverter {
     }
 
     public void runArtistDataConverter() {
-        int page = 0;
-        int size = 10000;
-        boolean completed = false;
+
         AtomicInteger counter = new AtomicInteger(0);
         List<PleerArtist> pleerArtists = pleerArtistRepository.findAll();
         pleerArtists.parallelStream().forEach(a -> {
             MbArtist mbArtist = mbArtistRepository.findOne(a.getId().toString());
-            mbArtist.setData(a.getArtistData());
-            mbArtistRepository.save(mbArtist);
+            if(mbArtist != null) {
+                mbArtist.setData(a.getArtistData());
+                mbArtistRepository.save(mbArtist);
+            }
             System.out.println(String.format("Processed %s / %s artists", counter.incrementAndGet(), pleerArtists.size()));
         });
     }

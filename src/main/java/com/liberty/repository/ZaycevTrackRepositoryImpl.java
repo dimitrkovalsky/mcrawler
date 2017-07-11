@@ -35,7 +35,7 @@ public class ZaycevTrackRepositoryImpl implements ZaycevTrackRepository {
     }
 
     @Override
-    @Cacheable(value = "zaycevTracks", key = "#artistName")
+//    @Cacheable(value = "zaycevTracks", key = "#artistName")
     public List<ZaycevTrack> findByArtistName(String artistName) {
         DBObject dbObject = Criteria.where("zaycevArtistName").regex(Pattern.compile(artistName, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)).getCriteriaObject();
 

@@ -15,7 +15,7 @@ public class ConverterRunner {
         DataConverter converter = context.getBean(DataConverter.class);
         //converter.runArtistConverter();
 //        converter.runAlbumConverter();
-        converter.convertArtistWithAlbums(163952);
-//        converter.runArtistDataConverter();
+//        converter.convertArtistWithAlbums(163952);
+        converter.runArtistDataConverter();
     }
 }

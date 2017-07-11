@@ -56,12 +56,15 @@ public class TrackLinker {
     }
 
     private List<StreamTrack> getPleerStreams(MbTrack track, MbArtist artist) {
+        if (artist == null || artist.getName() == null)
+            return emptyList();
         List<PleerTrack> tracks = pleerTrackRepository.findByArtistName(artist.getName().toLowerCase());
         if (tracks == null) {
             System.err.println("Not found pleer tracks for : " + artist.getName());
             return emptyList();
         }
-        System.out.println(String.format("Found %s track for %s artist in Pleer database", tracks.size(), artist.getName()));
+        System.out.println(
+                String.format("Found %s track for %s artist in Pleer database", tracks.size(), artist.getName()));
 
         return tracks.stream().filter(t -> {
             String cleanName = cleanString(t.getSong());
@@ -70,6 +73,8 @@ public class TrackLinker {
     }
 
     private List<StreamTrack> getZaycevStreams(MbTrack track, MbArtist artist) {
+        if (artist == null || artist.getName() == null)
+            return emptyList();
         List<ZaycevTrack> tracks = zaycevTrackRepository.findByArtistName(artist.getName().toLowerCase());
         if (tracks == null) {
             System.err.println("Not found zaycev tracks for : " + artist.getName());
@@ -83,17 +88,25 @@ public class TrackLinker {
     }
 
     public void linkTracks() {
-        int page = 0;
+        int page = 856;
         int size = 1000;
         boolean completed = false;
         AtomicInteger counter = new AtomicInteger(page * size);
         long total = mbTrackRepository.count();
         while (!completed) {
             List<MbTrack> all = mbTrackRepository.findAll(new PageRequest(page, size)).getContent();
-            all.parallelStream().forEach(t -> {
-                linkTracks(t.getMbid());
-                System.out.println(String.format("Processed %s / %s tracks", counter.incrementAndGet(), total));
-            });
+            if (all != null) {
+                try {
+                    all.parallelStream().forEach(t -> {
+                        if (t != null)
+                            linkTracks(t.getMbid());
+                        System.out.println(String.format("Processed %s / %s tracks", counter.incrementAndGet(), total));
+                    });
+                }
+                catch (Exception e) {
+                    System.err.println("Error : " + e.getMessage());
+                }
+            }
             page++;
             if (all.size() < size) {
                 completed = true;
@@ -112,19 +125,20 @@ public class TrackLinker {
             List<GenericTrack> all = genericTrackRepository.findAll(new PageRequest(page, size)).getContent();
             all.forEach(t -> {
                 if (t.getStreams() != null) {
-                    t.getStreams().stream().filter(s -> s.getPlatform() == StreamPlatform.PLEER && StringUtils.isEmpty(s.getStreamLink()))
-                        .forEach(s -> {
-                            try {
-                                Optional<String> link = fetcher.fetchLink(s.getPlatformTrackId());
-                                link.ifPresent(l -> {
-                                    s.setStreamLink(l);
-                                    System.out.println("Fetched stream for : " + s.getTrackName());
-                                });
-                                Thread.sleep(1000);
-                            } catch (Exception e) {
-                                System.err.println(e.getMessage());
-                            }
-                        });
+                    t.getStreams().stream().filter(s -> s.getPlatform() == StreamPlatform.PLEER && StringUtils
+                            .isEmpty(s.getStreamLink())).forEach(s -> {
+                        try {
+                            Optional<String> link = fetcher.fetchLink(s.getPlatformTrackId());
+                            link.ifPresent(l -> {
+                                s.setStreamLink(l);
+                                System.out.println("Fetched stream for : " + s.getTrackName());
+                            });
+                            Thread.sleep(1000);
+                        }
+                        catch (Exception e) {
+                            System.err.println(e.getMessage());
+                        }
+                    });
                     genericTrackRepository.save(t);
                 }
                 System.out.println(String.format("Processed %s / %s tracks", counter.incrementAndGet(), total));
@@ -154,6 +168,7 @@ public class TrackLinker {
                 if (!StringUtils.isEmpty(artistName)) {
                     pleerStreams = pleerArtists.get(artistName);
                     zaycevStreams = zaycevArtists.get(artistName);
+
                 }
                 linkTracks(t, artistName, pleerStreams, zaycevStreams);
                 System.out.println(String.format("Processed %s / %s tracks", counter.incrementAndGet(), total));
@@ -165,12 +180,26 @@ public class TrackLinker {
         }
     }
 
-    private void linkTracks(MbTrack mbTrack, String artistName, List<StreamTrack> pleerStreams, List<StreamTrack> zaycevStreams) {
+    private void linkTracks(MbTrack mbTrack, String artistName, List<StreamTrack> pleerStreams,
+            List<StreamTrack> zaycevStreams) {
         GenericTrack genericTrack = new GenericTrack(mbTrack);
+        if (!CollectionUtils.isEmpty(pleerStreams))
+            pleerStreams = pleerStreams.stream().filter(t -> {
+                String cleanName = cleanString(t.getTrackName());
+                return cleanName.contains(cleanString(mbTrack.getName()));
+            }).collect(Collectors.toList());
+        if (!CollectionUtils.isEmpty(zaycevStreams)) {
+            zaycevStreams = zaycevStreams.stream().filter(t -> {
+                String cleanName = cleanString(t.getTrackName());
+                return cleanName.contains(cleanString(mbTrack.getName()));
+            }).collect(Collectors.toList());
+        }
         genericTrack.addStreams(pleerStreams);
         genericTrack.addStreams(zaycevStreams);
 
-        System.out.println(String.format("Found %s streams for track: %s and artist: %s", genericTrack.getStreams().size(), mbTrack.getName(), artistName));
+        System.out.println(
+                String.format("Found %s streams for track: %s and artist: %s", genericTrack.getStreams().size(),
+                        mbTrack.getName(), artistName));
         genericTrackRepository.save(genericTrack);
     }
 
@@ -188,7 +217,8 @@ public class TrackLinker {
                 String name = cleanString(a.getName());
                 mbArtist.put(a.getMbid(), name);
             });
-            System.out.println(String.format("Loaded %s / %s musicbrainz artists", counter.addAndGet(all.size()), total));
+            System.out
+                    .println(String.format("Loaded %s / %s musicbrainz artists", counter.addAndGet(all.size()), total));
             page++;
             if (all.size() < size) {
                 completed = true;
@@ -214,7 +244,8 @@ public class TrackLinker {
                     ArrayList<StreamTrack> streams = new ArrayList<>();
                     streams.add(track.toStreamTrack());
                     zaycevTrackMap.put(artist, streams);
-                } else {
+                }
+                else {
                     streamTracks.add(track.toStreamTrack());
                     zaycevTrackMap.put(artist, streamTracks);
                 }
@@ -246,7 +277,8 @@ public class TrackLinker {
                     ArrayList<StreamTrack> streams = new ArrayList<>();
                     streams.add(track.toStreamTrack());
                     pleerTrackMap.put(singer, streams);
-                } else {
+                }
+                else {
                     streamTracks.add(track.toStreamTrack());
                     pleerTrackMap.put(singer, streamTracks);
                 }
@@ -263,6 +295,9 @@ public class TrackLinker {
 
     private void linkTracks(String trackMbid) {
         MbTrack track = mbTrackRepository.findOne(trackMbid);
+        if (track == null)
+            return;
+        System.out.println("Trying to link track for : " + track.getName());
         MbArtist artist = mbArtistRepository.findOne(track.getArtistMbib());
 
         List<StreamTrack> pleerStreams = getPleerStreams(track, artist);
@@ -271,7 +306,9 @@ public class TrackLinker {
 
         genericTrack.addStreams(pleerStreams);
         genericTrack.addStreams(zaycevStreams);
-        System.out.println(String.format("Found %s streams for track: %s and artist: %s", genericTrack.getStreams().size(), track.getName(), artist.getName()));
+        System.out.println(
+                String.format("Found %s streams for track: %s and artist: %s", genericTrack.getStreams().size(),
+                        track.getName(), artist.getName()));
         genericTrackRepository.save(genericTrack);
     }
 
