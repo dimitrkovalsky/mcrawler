@@ -19,4 +19,6 @@ public interface PleerTrackRepository {
     List<PleerTrack> findAll(PageRequest pageRequest);
 
     long count();
+
+    void save(PleerTrack track);
 }

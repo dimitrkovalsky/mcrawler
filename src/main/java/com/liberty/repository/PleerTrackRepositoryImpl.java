@@ -52,4 +52,9 @@ public class PleerTrackRepositoryImpl implements PleerTrackRepository {
     public long count() {
         return operations.getCollection("song").count();
     }
+
+    @Override
+    public void save(PleerTrack track) {
+        operations.save(track);
+    }
 }
