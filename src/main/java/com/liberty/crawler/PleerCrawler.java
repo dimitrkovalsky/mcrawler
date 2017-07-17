@@ -1,5 +1,7 @@
 package com.liberty.crawler;
 
+import com.liberty.model.PleerTrack;
+import com.liberty.repository.PleerTrackRepository;
 import edu.uci.ics.crawler4j.crawler.Page;
 import edu.uci.ics.crawler4j.crawler.WebCrawler;
 import edu.uci.ics.crawler4j.parser.HtmlParseData;
@@ -17,11 +19,11 @@ import java.util.Set;
  * @since 18.05.2017
  */
 public class PleerCrawler extends WebCrawler {
-    private final SongRepository repository;
+    private final PleerTrackRepository repository;
     private LinkFetcher linkFetcher = new LinkFetcher();
     private Set<String> fetched = new HashSet<>();
 
-    public PleerCrawler(SongRepository repository) {
+    public PleerCrawler(PleerTrackRepository repository) {
         this.repository = repository;
     }
 
@@ -121,7 +123,7 @@ public class PleerCrawler extends WebCrawler {
         }
     }
 
-    private void save(Song song) {
+    private void save(PleerTrack song) {
         repository.save(song);
     }
 

@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class CrawlerFactory implements CrawlController.WebCrawlerFactory {
 
-    @Autowired
-    private SongRepository repository;
+//    @Autowired
+//    private SongRepository repository;
 
 //    public CrawlerFactory( SongRepository repository) {
 //        this.repository = repository;
@@ -21,6 +21,7 @@ public class CrawlerFactory implements CrawlController.WebCrawlerFactory {
 
     @Override
     public WebCrawler newInstance() {
-        return new PleerCrawler(repository);
+        return null;
+//        return new PleerCrawler(repository);
     }
 }

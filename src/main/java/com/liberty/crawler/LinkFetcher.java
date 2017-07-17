@@ -1,7 +1,7 @@
 package com.liberty.crawler;
 
-import com.liberty.accord.common.JsonHelper;
-import com.liberty.accord.common.RequestHelper;
+import com.liberty.common.JsonHelper;
+import com.liberty.common.RequestHelper;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpResponse;

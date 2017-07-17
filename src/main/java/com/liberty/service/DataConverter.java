@@ -113,7 +113,7 @@ public class DataConverter {
                     album.setArtistInternalId(artistEntity.getId());
                     album.setArtistMbib(artistEntity.getMbid().toString());
                     if (rel.getTracks() != null) {
-                        album.setTags(r.getTags().stream().map(TagEntity::getName).collect(Collectors.toList()));
+                        album.setTags(r.getTags().stream().map(TagEntity::getName).collect(Collectors.toSet()));
                     }
                     if (rel.getTracks() != null) {
                         List<MbAlbum.AlbumTrack> albumTracks = rel.getTracks().stream()

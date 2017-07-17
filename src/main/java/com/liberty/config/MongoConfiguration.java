@@ -12,7 +12,7 @@ import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
 @Configuration
 public class MongoConfiguration extends AbstractMongoConfiguration {
 
-    private static final String DB_NAME = "accord-db";
+    private static final String DB_NAME = "accord-db2";
     private static final String HOST = "127.0.0.1";
     private static final int PORT = 27017;
 

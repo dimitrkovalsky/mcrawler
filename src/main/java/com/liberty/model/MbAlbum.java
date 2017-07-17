@@ -10,9 +10,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.index.TextIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by dkovalskyi on 29.06.2017.
@@ -28,14 +26,18 @@ public class MbAlbum {
     private Integer internalId;
     @TextIndexed
     private String name;
+    private String wikiSummary;
+    private String wikiText;
     @Indexed
     private Integer artistInternalId;
     @Indexed
     private String artistMbib;
-    private List<String> tags;
+    private Set<String> tags;
     private List<AlbumTrack> tracks;
 
     private Map<ImageSize, String> images = new HashMap<>();
+    private Date releaseDate;
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
