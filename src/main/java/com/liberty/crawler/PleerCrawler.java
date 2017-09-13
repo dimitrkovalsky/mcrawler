@@ -73,10 +73,11 @@ public class PleerCrawler extends WebCrawler {
                     System.out.println(link);
                     fetched.add(trackId);
                     if (link.isPresent()) {
-                      //  save(new Song(trackId, artistName, trackName, link.get()));
+                        PleerTrack pleerTrack = getPleerTrack(artistName, trackName, trackId, link.get());
+                        save(pleerTrack);
                     } else {
-                        System.err.println("Cannot fetch link");
-                        //save(new Song(trackId, artistName, trackName, null));
+                        System.err.println("Cannot fetch link for " + artistName);
+                        save(getPleerTrack(artistName, trackName, trackId, null));
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -92,7 +93,17 @@ public class PleerCrawler extends WebCrawler {
 //            System.out.println("Number of outgoing links: " + links.size());
         }
     }
-// Todo: use virtual scroll
+
+    private PleerTrack getPleerTrack(String artistName, String trackName, String trackId, String link) {
+        PleerTrack pleerTrack = new PleerTrack();
+        pleerTrack.setId(trackId);
+        pleerTrack.setSinger(artistName);
+        pleerTrack.setSource(link);
+        pleerTrack.setSong(trackName);
+        return pleerTrack;
+    }
+
+    // Todo: use virtual scroll
     private void crawlArtist(Page page) {
         System.out.println("Crawl songs from artist page: " + page.getWebURL().getPath());
         if (page.getParseData() instanceof HtmlParseData) {
@@ -111,7 +122,7 @@ public class PleerCrawler extends WebCrawler {
                     String[] split = trackRef.split("/");
                     String trackId = split[split.length - 1];
                     fetched.add(trackId);
-//                    save(new Song(trackId, artistName, trackName, null));
+                    save(getPleerTrack(artistName, trackName, trackId, null));
 
                 } else if (artist.size() > 0 && track.size() <= 0) {
                     System.err.println("Artist size more than tracks");
