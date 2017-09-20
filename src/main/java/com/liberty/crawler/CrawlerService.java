@@ -10,6 +10,7 @@ import com.liberty.repository.GenericTrackRepository;
 import com.liberty.repository.MbArtistRepository;
 import com.liberty.repository.PleerArtistRepository;
 import com.liberty.repository.PleerTrackRepository;
+import com.liberty.service.TrackLinker;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,8 @@ import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
+import static java.util.function.Function.identity;
 
 /**
  * @author dkovalskyi
@@ -34,6 +37,9 @@ public class CrawlerService {
     private GenericTrackRepository trackRepository;
     @Autowired
     private MbArtistRepository mbArtistRepository;
+
+    @Autowired
+    private TrackLinker trackLinker;
     //    @Autowired
     //    private FlickrCrawler flickrCrawler;
     //    private CrawlController controller;
@@ -92,14 +98,12 @@ public class CrawlerService {
                     if (!crawled.contains(a)) {
                         // pleerArtistRepository.save(new PleerArtist(new ObjectId(), a));
                         crawled.add(a);
-                    }
-                    else {
+                    } else {
                         log.warn("{} Artist already crawled", a);
                     }
                 });
                 log.error("Stored {} artists for : {}", artists.size(), symbol);
-            }
-            else {
+            } else {
                 log.error("Not found artists for : " + symbol);
             }
             Thread.sleep(1000);
@@ -109,14 +113,18 @@ public class CrawlerService {
 
     public void updateStreamLinks() {
         List<GenericTrack> tracks = trackRepository.findAll();
+        Map<String, GenericTrack> genericTrackMap = tracks.stream().collect(Collectors.toMap(GenericTrack::getMbid, identity()));
         List<String> artistMbids = tracks.stream().map(GenericTrack::getArtistMbib).collect(Collectors.toList());
         ArrayList<MbArtist> artists = Lists.newArrayList(mbArtistRepository.findAll(artistMbids));
         log.info("Found {} artists in database", artists.size());
+        AtomicInteger counter = new AtomicInteger(0);
+        Map<String, List<PleerTrack>> pleerArtistTracks = new HashMap<>();
         artists.forEach(a -> {
             List<PleerTrack> pleerTracks = findPleerTracks(a.getName());
-            System.out.println("Fetched " + pleerTracks.size() + " tracks for " + a.getName());
-
+            pleerArtistTracks.put(a.getMbid(), pleerTracks);
+            log.info("Fetched {}/{} artists", counter.incrementAndGet(), artists.size());
         });
+        trackLinker.relinkTracks(genericTrackMap, pleerArtistTracks);
     }
 
     //
@@ -175,7 +183,7 @@ public class CrawlerService {
         Random random = new Random();
         while (!shouldStop) {
             String url = String
-                    .format(SONG_SEARCH_URL, page, URLEncoder.encode(artistName.toLowerCase()), random.nextFloat());
+                .format(SONG_SEARCH_URL, page, URLEncoder.encode(artistName.toLowerCase()), random.nextFloat());
             String result = RequestHelper.executeRequestAndGetResult(url);
             String[] split = result.split("<li ");
             List<String> tags = new ArrayList<>();
@@ -205,8 +213,7 @@ public class CrawlerService {
     private void delay(int delay) {
         try {
             Thread.sleep(delay);
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
